@@ -49,10 +49,11 @@ try {
         sendResponse(false, 'Email already registered', [], 409);
     }
     
-    // Insert new user (storing password as plain text for testing)
-    // In production: use password_hash($password, PASSWORD_DEFAULT)
+    // Hash password with bcrypt before storing
+    $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+    
     $stmt = $conn->prepare("INSERT INTO users (name, email, password, phone, hospital, role) VALUES (?, ?, ?, ?, ?, 'doctor')");
-    $stmt->execute([$name, $email, $password, $phone, $hospital]);
+    $stmt->execute([$name, $email, $hashedPassword, $phone, $hospital]);
     
     $userId = $conn->lastInsertId();
     

@@ -3,8 +3,7 @@
  * Login API
  * Endpoint: POST /login.php
  * 
- * NOTE: Using plain text password comparison for testing.
- * In production, use password_hash and password_verify.
+ * Uses bcrypt password verification for secure authentication.
  */
 
 require_once 'db_config.php';
@@ -36,9 +35,8 @@ try {
         sendResponse(false, 'Invalid email or password', [], 401);
     }
     
-    // Plain text password comparison (for testing only)
-    // In production, replace with: if (!password_verify($password, $user['password']))
-    if ($password !== $user['password']) {
+    // Verify password against bcrypt hash
+    if (!password_verify($password, $user['password'])) {
         sendResponse(false, 'Invalid email or password', [], 401);
     }
     

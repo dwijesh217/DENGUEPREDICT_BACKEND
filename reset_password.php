@@ -38,10 +38,11 @@ try {
         sendResponse(false, 'Email not found', [], 404);
     }
     
-    // Update password (plain text for testing)
-    // In production: use password_hash($newPassword, PASSWORD_DEFAULT)
+    // Hash new password with bcrypt before storing
+    $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
+    
     $stmt = $conn->prepare("UPDATE users SET password = ?, updated_at = NOW() WHERE email = ?");
-    $stmt->execute([$newPassword, $email]);
+    $stmt->execute([$hashedPassword, $email]);
     
     sendResponse(true, 'Password reset successfully', [], 200);
     
