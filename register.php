@@ -52,8 +52,8 @@ try {
     // Hash password with bcrypt before storing
     $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
     
-    $stmt = $conn->prepare("INSERT INTO users (name, email, password, phone, hospital, role) VALUES (?, ?, ?, ?, ?, 'doctor')");
-    $stmt->execute([$name, $email, $hashedPassword, $phone, $hospital]);
+    $stmt = $conn->prepare("INSERT INTO users (name, email, password, phone, hospital, specialization, role) VALUES (?, ?, ?, ?, ?, ?, 'doctor')");
+    $stmt->execute([$name, $email, $hashedPassword, $phone, $hospital, $specialty]);
     
     $userId = $conn->lastInsertId();
     

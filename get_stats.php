@@ -79,11 +79,18 @@ try {
     $stmt->execute([$userId]);
     $recentPredictions = $stmt->fetch()['total'];
     
-    // High risk count (severe predictions)
+    // High risk count (patients with latest prediction being severe/critical/high risk)
     $stmt = $conn->prepare("
-        SELECT COUNT(*) as total 
-        FROM predictions 
-        WHERE predicted_by = ? AND (severity = 'severe' OR risk_score >= 70)
+        SELECT COUNT(p.id) as total 
+        FROM patients p
+        INNER JOIN predictions pr ON pr.patient_id = p.id
+        WHERE p.created_by = ? 
+          AND (pr.severity = 'severe' OR pr.risk_score >= 70 OR pr.outcome = 'critical')
+          AND pr.id = (
+              SELECT pr2.id FROM predictions pr2 
+              WHERE pr2.patient_id = p.id 
+              ORDER BY pr2.created_at DESC LIMIT 1
+          )
     ");
     $stmt->execute([$userId]);
     $highRiskCount = $stmt->fetch()['total'];

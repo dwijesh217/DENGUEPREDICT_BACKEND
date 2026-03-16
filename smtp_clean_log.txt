@@ -1,0 +1,13 @@
+2026-03-14 03:48:56	Connection: opening to smtp.gmail.com:587, timeout=15, options=array (
+                   	                    'ssl' => 
+                   	                    array (
+                   	                      'verify_peer' => false,
+                   	                      'verify_peer_name' => false,
+                   	                      'allow_self_signed' => true,
+                   	                    ),
+                   	                  )
+2026-03-14 03:49:11	Connection failed. Error #2: stream_socket_client(): Unable to connect to smtp.gmail.com:587 (A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond) [C:\xampp\htdocs\denguepredict\PHPMailer\SMTP.php line 423]
+2026-03-14 03:49:11	SMTP ERROR: Failed to connect to server: A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond (10060)
+2026-03-14 03:49:11	SMTP Error: Could not connect to SMTP host. Failed to connect to server
+Message could not be sent. Mailer Error: SMTP Error: Could not connect to SMTP host. Failed to connect to server SMTP server error: Failed to connect to server SMTP code: 10060 Additional SMTP info: A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond
+Exception: SMTP Error: Could not connect to SMTP host. Failed to connect to server

@@ -32,7 +32,7 @@ if (!empty($missing)) {
 }
 
 // Validate severity
-$validSeverity = ['mild', 'moderate', 'severe'];
+$validSeverity = ['none', 'mild', 'moderate', 'severe'];
 if (!in_array($severity, $validSeverity)) {
     sendResponse(false, 'Invalid severity value. Must be: mild, moderate, or severe', [], 400);
 }

@@ -77,7 +77,7 @@ try {
     $stmt->execute([$userId]);
     $severityRows = $stmt->fetchAll();
     
-    $severityDist = ['mild' => 0, 'moderate' => 0, 'severe' => 0];
+    $severityDist = ['none' => 0, 'mild' => 0, 'moderate' => 0, 'severe' => 0];
     foreach ($severityRows as $row) {
         $sev = strtolower($row['severity']);
         if (isset($severityDist[$sev])) {

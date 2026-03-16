@@ -39,9 +39,22 @@ try {
     }
     
     // Build update query based on whether profile_pic is provided
-    if ($profilePic !== null && !empty($profilePic)) {
-        $stmt = $conn->prepare("UPDATE users SET name = ?, hospital = ?, phone = ?, specialization = ?, profile_pic = ? WHERE id = ?");
-        $stmt->execute([$name, $hospital, $phone, $specialization, $profilePic, $userId]);
+    if ($profilePic !== null) {
+        // If deleting/clearing photo
+        if (empty($profilePic)) {
+            // Optional: delete old file
+            $stmtFile = $conn->prepare("SELECT profile_pic FROM users WHERE id = ?");
+            $stmtFile->execute([$userId]);
+            $oldPic = $stmtFile->fetchColumn();
+            if ($oldPic && file_exists($oldPic) && strpos($oldPic, 'uploads/') !== false) {
+                unlink($oldPic);
+            }
+            $stmt = $conn->prepare("UPDATE users SET name = ?, hospital = ?, phone = ?, specialization = ?, profile_pic = NULL WHERE id = ?");
+            $stmt->execute([$name, $hospital, $phone, $specialization, $userId]);
+        } else {
+            $stmt = $conn->prepare("UPDATE users SET name = ?, hospital = ?, phone = ?, specialization = ?, profile_pic = ? WHERE id = ?");
+            $stmt->execute([$name, $hospital, $phone, $specialization, $profilePic, $userId]);
+        }
     } else {
         $stmt = $conn->prepare("UPDATE users SET name = ?, hospital = ?, phone = ?, specialization = ? WHERE id = ?");
         $stmt->execute([$name, $hospital, $phone, $specialization, $userId]);

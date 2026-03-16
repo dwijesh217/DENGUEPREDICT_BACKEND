@@ -42,12 +42,14 @@ try {
     $patient = $stmt->fetch();
     
     if (!$patient) {
+        error_log("Patient not found for ID: " . $patientId);
         sendResponse(false, 'Patient not found', [], 404);
     }
     
     sendResponse(true, 'Patient retrieved successfully', $patient);
     
 } catch (PDOException $e) {
+    error_log("Error fetching patient ID " . $patientId . ": " . $e->getMessage());
     sendResponse(false, 'Failed to get patient: ' . $e->getMessage(), [], 500);
 }
 ?>

@@ -9,45 +9,34 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
-// Database connection
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "denguepredict";
-
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-if ($conn->connect_error) {
-    echo json_encode([
-        'success' => false,
-        'message' => 'Database connection failed'
-    ]);
-    exit;
-}
+require_once 'db_config.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode([
-        'success' => false,
-        'message' => 'Invalid request method'
-    ]);
-    exit;
+    sendResponse(false, 'Invalid request method', [], 405);
 }
 
+// Support both JSON and Form Data
+$rawInput = file_get_contents('php://input');
+$jsonData = json_decode($rawInput, true);
+
+$data = !empty($jsonData) ? $jsonData : $_POST;
+
 // Get patient data
-$created_by = isset($_POST['created_by']) ? intval($_POST['created_by']) : 0;
-$name = isset($_POST['name']) ? $conn->real_escape_string($_POST['name']) : '';
-$age = isset($_POST['age']) ? intval($_POST['age']) : 0;
-$gender = isset($_POST['gender']) ? $conn->real_escape_string(strtolower($_POST['gender'])) : '';
-$blood_group = isset($_POST['blood_group']) ? $conn->real_escape_string($_POST['blood_group']) : '';
-$phone = isset($_POST['phone']) ? $conn->real_escape_string($_POST['phone']) : '';
-$address = isset($_POST['address']) ? $conn->real_escape_string($_POST['address']) : '';
+$created_by = isset($data['created_by']) ? intval($data['created_by']) : 0;
+$name = isset($data['name']) ? trim($data['name']) : '';
+$age = isset($data['age']) ? intval($data['age']) : 0;
+$gender = isset($data['gender']) ? strtolower(trim($data['gender'])) : '';
+$blood_group = isset($data['blood_group']) ? trim($data['blood_group']) : '';
+$phone = isset($data['phone']) ? trim($data['phone']) : '';
+$address = isset($data['address']) ? trim($data['address']) : '';
 
 // Get lab values
-$platelet_count = isset($_POST['platelet_count']) ? floatval($_POST['platelet_count']) : 0;
-$wbc_count = isset($_POST['wbc_count']) ? floatval($_POST['wbc_count']) : 0;
-$fever_days = isset($_POST['fever_days']) ? intval($_POST['fever_days']) : 0;
-$hematocrit = isset($_POST['hematocrit']) ? floatval($_POST['hematocrit']) : 0;
-$hemoglobin = isset($_POST['hemoglobin']) ? floatval($_POST['hemoglobin']) : 0;
+$platelet_count = isset($data['platelet_count']) ? floatval($data['platelet_count']) : 0;
+$wbc_count = isset($data['wbc_count']) ? floatval($data['wbc_count']) : 0;
+$fever_days = isset($data['fever_days']) ? intval($data['fever_days']) : 0;
+$hematocrit = isset($data['hematocrit']) ? floatval($data['hematocrit']) : 0;
+$hemoglobin = isset($data['hemoglobin']) ? floatval($data['hemoglobin']) : 0;
+$symptoms = isset($data['symptoms']) ? trim($data['symptoms']) : '';
 
 // Validate required fields
 if ($created_by <= 0 || empty($name) || $age <= 0 || empty($gender)) {
@@ -71,57 +60,34 @@ if (!in_array($gender, ['male', 'female', 'other'])) {
     $gender = 'other';
 }
 
-// Start transaction
-$conn->begin_transaction();
-
 try {
+    $conn = getConnection();
+    
+    // Start transaction
+    $conn->beginTransaction();
+
     // Insert patient
-    $patient_sql = "INSERT INTO patients (created_by, name, age, gender, phone, address, blood_group) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?)";
+    $stmt = $conn->prepare("INSERT INTO patients (created_by, name, age, gender, phone, address, blood_group) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    $stmt->execute([$created_by, $name, $age, $gender, $phone, $address, $blood_group]);
     
-    $stmt = $conn->prepare($patient_sql);
-    $stmt->bind_param("isissss", $created_by, $name, $age, $gender, $phone, $address, $blood_group);
-    
-    if (!$stmt->execute()) {
-        throw new Exception("Failed to insert patient: " . $stmt->error);
-    }
-    
-    $patient_id = $conn->insert_id;
-    $stmt->close();
+    $patient_id = $conn->lastInsertId();
     
     // Insert lab report
-    $lab_sql = "INSERT INTO lab_reports (patient_id, recorded_by, platelet_count, wbc_count, hemoglobin, hematocrit, fever_days) 
-                VALUES (?, ?, ?, ?, ?, ?, ?)";
+    $stmt = $conn->prepare("INSERT INTO lab_reports (patient_id, recorded_by, platelet_count, wbc_count, hemoglobin, hematocrit, fever_days, symptoms) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->execute([$patient_id, $created_by, $platelet_count, $wbc_count, $hemoglobin, $hematocrit, $fever_days, $symptoms]);
     
-    $stmt = $conn->prepare($lab_sql);
-    $stmt->bind_param("iiddddi", $patient_id, $created_by, $platelet_count, $wbc_count, $hemoglobin, $hematocrit, $fever_days);
-    
-    if (!$stmt->execute()) {
-        throw new Exception("Failed to insert lab report: " . $stmt->error);
-    }
-    
-    $lab_report_id = $conn->insert_id;
-    $stmt->close();
+    $lab_report_id = $conn->lastInsertId();
     
     // Commit transaction
     $conn->commit();
     
-    echo json_encode([
-        'success' => true,
-        'message' => 'Patient added successfully',
-        'patient_id' => $patient_id,
-        'lab_report_id' => $lab_report_id
-    ]);
+    sendResponse(true, 'Patient added successfully', [
+        'patient_id' => intval($patient_id),
+        'lab_report_id' => intval($lab_report_id)
+    ], 201);
     
 } catch (Exception $e) {
-    // Rollback on error
-    $conn->rollback();
-    
-    echo json_encode([
-        'success' => false,
-        'message' => $e->getMessage()
-    ]);
+    if (isset($conn)) $conn->rollBack();
+    sendResponse(false, $e->getMessage(), [], 500);
 }
-
-$conn->close();
 ?>

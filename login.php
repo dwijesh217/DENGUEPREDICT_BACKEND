@@ -32,12 +32,12 @@ try {
     $user = $stmt->fetch();
     
     if (!$user) {
-        sendResponse(false, 'Invalid email or password', [], 401);
+        sendResponse(false, 'The email or password you entered is incorrect', [], 401);
     }
     
     // Verify password against bcrypt hash
     if (!password_verify($password, $user['password'])) {
-        sendResponse(false, 'Invalid email or password', [], 401);
+        sendResponse(false, 'The email or password you entered is incorrect', [], 401);
     }
     
     // Remove password from response

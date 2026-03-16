@@ -41,6 +41,7 @@ try {
                 lr.ast,
                 lr.alt,
                 lr.fever_days,
+                lr.symptoms,
                 pr.severity,
                 pr.outcome,
                 pr.risk_score,
